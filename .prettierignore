@@ -1,0 +1,9 @@
+node_modules
+.creator
+.idea
+build
+extensions
+library
+profiles
+settings
+temp

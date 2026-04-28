@@ -1,0 +1,15 @@
+{
+  "name": "runner-playable",
+  "uuid": "11152bd9-c48d-44c7-8770-3e326f149138",
+  "creator": {
+    "version": "3.8.8"
+  },
+  "scripts": {
+    "prettify:check": "prettier --check '**/*.{ts,js,json,html,css}'",
+    "prettify": "prettier --write '**/*.{ts,js,json,html,css}'"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3",
+    "prettier-plugin-organize-imports": "^4.3.0"
+  }
+}
