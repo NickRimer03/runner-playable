@@ -3,6 +3,8 @@ export enum GameEvents {
 
   INPUT_UP,
 
+  CHARACTER_HIT,
+
   GAME_FINISH,
   GAME_SHOW_PACKSHOT,
 
@@ -13,6 +15,4 @@ export enum GameEvents {
   TOGGLE_SOUND,
   SOUND_PLAY,
   SOUND_STOP,
-
-  CHECK_BUTTON_CLICKED,
 }

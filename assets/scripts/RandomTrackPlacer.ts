@@ -10,6 +10,7 @@ import {
   UITransform,
   Vec2,
 } from "cc";
+import { GameManager } from "./GameManager";
 import { GameState, getGameState } from "./state/GameState";
 
 const { ccclass, property } = _decorator;
@@ -38,6 +39,12 @@ export class RandomTrackPlacer extends Component {
   scrollSpeed: number = 200;
 
   @property(CCBoolean)
+  useGlobalGameScrollSpeed: boolean = false;
+
+  @property(GameManager)
+  gameManager: GameManager | null = null;
+
+  @property(CCBoolean)
   preventSameAsPrevious: boolean = false;
 
   private _activeNodes: Node[] = [];
@@ -49,15 +56,26 @@ export class RandomTrackPlacer extends Component {
   }
 
   update(dt: number) {
-    if (getGameState() !== GameState.GAMEPLAY) return;
+    const s = getGameState();
+    if (s !== GameState.GAMEPLAY && s !== GameState.TUTORIAL) return;
 
-    const dx = this.scrollSpeed * dt;
+    const dx = this._getScrollSpeedPxPerSec() * dt;
     for (const node of this._activeNodes) {
       const p = node.position;
       node.setPosition(p.x - dx, p.y, p.z);
     }
 
     this._recycleOffscreenNodes();
+  }
+
+  private _getScrollSpeedPxPerSec(): number {
+    if (this.useGlobalGameScrollSpeed) {
+      if (this.gameManager) {
+        return this.gameManager.gameScrollSpeed;
+      }
+      console.warn("RandomTrackPlacer: Use Global Game Scroll Speed is on but Game Manager is not assigned.");
+    }
+    return this.scrollSpeed;
   }
 
   private _spawnInitial(): void {

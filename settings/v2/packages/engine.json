@@ -36,7 +36,7 @@
             "_value": false
           },
           "rich-text": {
-            "_value": true
+            "_value": false
           },
           "mask": {
             "_value": false
@@ -200,7 +200,6 @@
           "gfx-webgl",
           "gfx-webgl2",
           "physics-2d-builtin",
-          "rich-text",
           "tween",
           "ui"
         ],

@@ -7,10 +7,10 @@ const { ccclass, property } = _decorator;
 @ccclass("Redirector")
 export class Redirector extends Component {
   @property
-  iOsUrl: string = "https://apps.apple.com/";
+  iOsUrl: string = "https://app.plbx.ai/";
 
   @property
-  androidUrl: string = "https://play.google.com/";
+  androidUrl: string = "https://app.plbx.ai/";
 
   private _currentStoreLink: string = "";
 

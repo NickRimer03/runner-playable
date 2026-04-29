@@ -22,6 +22,19 @@ export class LifeManager extends Component {
   private _lifeNodes: Node[] = [];
   private _lostLifeOpacity = 0;
 
+  onEnable() {
+    this._subscribeHitEvent(true);
+  }
+
+  onDisable() {
+    this._subscribeHitEvent(false);
+  }
+
+  private _subscribeHitEvent(isOn: boolean): void {
+    const func = isOn ? "on" : "off";
+    gameEventTarget[func](GameEvents.CHARACTER_HIT, this._takeDamage, this);
+  }
+
   onLoad() {
     this._lostLifeOpacity = Math.round(255 * this.lostLifeOpacity);
     this._buildLifeNodes();
@@ -56,11 +69,7 @@ export class LifeManager extends Component {
     }
   }
 
-  getCurrentLives(): number {
-    return this._currentLives;
-  }
-
-  takeDamage(): void {
+  private _takeDamage(): void {
     if (this._currentLives <= 0) return;
 
     this._currentLives--;

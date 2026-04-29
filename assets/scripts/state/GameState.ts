@@ -5,6 +5,7 @@ export enum GameState {
   NONE = 0,
 
   START,
+  TUTORIAL,
   GAMEPLAY,
   FINISH,
 }
