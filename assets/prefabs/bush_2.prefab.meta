@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "a5dd7ad8-a035-4810-8dec-2fbd0ee8f764",
+  "uuid": "a4b8d0b4-4aa8-4ea4-b19f-a14b3132a91a",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "lamp"
+    "syncNodeName": "bush_2"
   }
 }

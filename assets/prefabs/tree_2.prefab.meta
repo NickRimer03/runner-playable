@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "a5dd7ad8-a035-4810-8dec-2fbd0ee8f764",
+  "uuid": "bbf209cf-0914-4f83-9c33-1f9a60133ecd",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "lamp"
+    "syncNodeName": "tree_2"
   }
 }
