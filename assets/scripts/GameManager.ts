@@ -1,21 +1,5 @@
-import {
-  _decorator,
-  BoxCollider2D,
-  CCFloat,
-  Collider2D,
-  Color,
-  Component,
-  Contact2DType,
-  IPhysics2DContact,
-  Label,
-  Node,
-  Sprite,
-  Tween,
-  tween,
-  UITransform,
-  Vec3,
-} from "cc";
-import { ConeHazard } from "./ConeHazard";
+import { _decorator, CCFloat, Component, Label, Node, Sprite, Tween, tween, UITransform, Vec3 } from "cc";
+import { CharacterCollision } from "./CharacterCollision";
 import { GameEvents } from "./events/GameEvents";
 import { gameEventTarget } from "./events/GameEventTarget";
 import { GameState, getGameState, setGameState } from "./state/GameState";
@@ -23,8 +7,6 @@ import { TexturePackSpriteAnimation } from "./TexturePackSpriteAnimation";
 import { opacityTo } from "./utils/utils";
 
 const { ccclass, property } = _decorator;
-
-const ENEMY_INSPECTOR_GROUP = { name: "Enemy", id: "enemy" };
 
 const CHARACTER_INSPECTOR_GROUP = { name: "Character", id: "character" };
 
@@ -51,47 +33,30 @@ export class GameManager extends Component {
   @property({ type: Node, group: CHARACTER_INSPECTOR_GROUP })
   characterNode: Node | null = null;
 
-  /** Vertical offset at jump apex (pixels); tween duration matches jump clip length × fps. */
   @property({ type: CCFloat, group: CHARACTER_INSPECTOR_GROUP })
   jumpHeight: number = 140;
-
-  @property({ group: CHARACTER_INSPECTOR_GROUP, displayName: "Hit Flash Tint" })
-  hitFlashTint: Color = new Color(255, 0, 0, 255);
-
-  @property({ type: CCFloat, group: CHARACTER_INSPECTOR_GROUP, displayName: "Hit Flash Step (sec)" })
-  hitFlashStepSec: number = 0.05;
-
-  @property({ type: Node, group: ENEMY_INSPECTOR_GROUP })
-  enemyNode: Node | null = null;
-
-  @property({ type: CCFloat, group: ENEMY_INSPECTOR_GROUP })
-  enemyScrollSpeed: number = 200;
-
-  @property({
-    group: ENEMY_INSPECTOR_GROUP,
-    displayName: "Use Global Game Scroll Speed",
-  })
-  enemyUseGlobalGameScrollSpeed: boolean = false;
 
   private _scrollBackground = false;
   private _characterGroundY: number | null = null;
   private _grounded = true;
 
+  onLoad() {
+    const char = this.characterNode;
+    if (!char) return;
+    if (!char.getComponent(CharacterCollision)) {
+      char.addComponent(CharacterCollision);
+    }
+  }
+
   onEnable() {
     this._subscribeEvents(true);
     this._syncBgScrollFromState();
-    this._subscribeCharacterCollision(true);
   }
 
   onDisable() {
     this._subscribeEvents(false);
-    this._subscribeCharacterCollision(false);
     if (this.characterNode) {
       Tween.stopAllByTarget(this.characterNode);
-      const flashSprite = this._getCharacterSprite();
-      if (flashSprite) {
-        Tween.stopAllByTarget(flashSprite);
-      }
     }
     this._grounded = true;
   }
@@ -106,97 +71,6 @@ export class GameManager extends Component {
     gameEventTarget[func](GameEvents.GAME_FINISH, this._finishGame, this);
     gameEventTarget[func](GameEvents.INPUT_UP, this._onInputUp, this);
     gameEventTarget[func](GameEvents.GAME_STATE_SET, this._onGameStateSet, this);
-  }
-
-  private _subscribeCharacterCollision(isOn: boolean): void {
-    const charNode = this.characterNode;
-    if (!charNode) return;
-
-    const collider =
-      charNode.getComponent(BoxCollider2D) ?? charNode.getComponentInChildren(BoxCollider2D);
-    if (!collider) return;
-
-    const fn = isOn ? "on" : "off";
-    collider[fn](Contact2DType.BEGIN_CONTACT, this._onCharacterContactHazard, this);
-  }
-
-  private _onCharacterContactHazard(
-    _selfCollider: Collider2D,
-    otherCollider: Collider2D,
-    _contact: IPhysics2DContact | null,
-  ): void {
-    if (getGameState() !== GameState.GAMEPLAY) return;
-    if (!this._isDamageFromCollider(otherCollider)) return;
-
-    const anim = this.characterNode?.getComponent(TexturePackSpriteAnimation);
-    if (!anim) return;
-
-    if (anim.currentClip === "hurt") return;
-
-    gameEventTarget.emit(GameEvents.CHARACTER_HIT);
-
-    anim.play("hurt", {
-      onComplete: () => {
-        const state = getGameState();
-        if (state === GameState.GAMEPLAY || state === GameState.TUTORIAL) {
-          anim.play("run");
-        } else if (state === GameState.FINISH) {
-          anim.play("idle");
-        }
-      },
-    });
-
-    const sprite = this._getCharacterSprite();
-    if (sprite) {
-      this._playCharacterHitFlash(sprite);
-    }
-  }
-
-  private _getCharacterSprite(): Sprite | null {
-    const node = this.characterNode;
-    if (!node) return null;
-    const anim = node.getComponent(TexturePackSpriteAnimation);
-    return (
-      anim?.sprite ?? node.getComponent(Sprite) ?? node.getComponentInChildren(Sprite)
-    );
-  }
-
-  private _playCharacterHitFlash(sprite: Sprite): void {
-    Tween.stopAllByTarget(sprite);
-    const base = sprite.color.clone();
-    const flash = this.hitFlashTint.clone();
-    const step = this.hitFlashStepSec;
-
-    tween(sprite)
-      .to(step, { color: flash })
-      .to(step, { color: base })
-      .to(step, { color: flash })
-      .to(step, { color: base })
-      .start();
-  }
-
-  private _isDamageFromCollider(other: Collider2D): boolean {
-    return this._isColliderUnderEnemy(other) || this._colliderBelongsToConeHazard(other);
-  }
-
-  private _isColliderUnderEnemy(other: Collider2D): boolean {
-    const root = this.enemyNode;
-    if (!root) return false;
-    let n: Node | null = other.node;
-    while (n) {
-      if (n === root) return true;
-      n = n.parent;
-    }
-    return false;
-  }
-
-  private _colliderBelongsToConeHazard(other: Collider2D): boolean {
-    let n: Node | null = other.node;
-    while (n) {
-      if (n.getComponent(ConeHazard)) return true;
-      n = n.parent;
-    }
-    return false;
   }
 
   update(dt: number) {
@@ -218,16 +92,6 @@ export class GameManager extends Component {
           this._snapSegmentRightOf(n2, n1);
         }
       }
-    }
-
-    const enemy = this.enemyNode;
-    if (enemy) {
-      const enemySpeed = this.enemyUseGlobalGameScrollSpeed
-        ? this.gameScrollSpeed
-        : this.enemyScrollSpeed;
-      const enemyDx = enemySpeed * dt;
-      const ep = enemy.position;
-      enemy.setPosition(ep.x - enemyDx, ep.y, ep.z);
     }
   }
 
@@ -252,6 +116,15 @@ export class GameManager extends Component {
 
   private _onGameStateSet(state: GameState) {
     this._syncBgScrollFromState(state);
+
+    if (state === GameState.TUTORIAL_PAUSE) {
+      const label = this.actionText;
+      if (label) {
+        label.string = "Jump to avoid enemies";
+      }
+      opacityTo(this.hand?.node, 255, this.opacityDuration);
+      opacityTo(this.actionText?.node, 255, this.opacityDuration);
+    }
   }
 
   private _syncBgScrollFromState(state: GameState = getGameState()) {
@@ -277,7 +150,7 @@ export class GameManager extends Component {
       return;
     }
 
-    if (state === GameState.GAMEPLAY) {
+    if (state === GameState.GAMEPLAY || state === GameState.TUTORIAL_PAUSE) {
       const anim = this.characterNode?.getComponent(TexturePackSpriteAnimation);
       if (!anim) return;
 
@@ -285,6 +158,12 @@ export class GameManager extends Component {
 
       const duration = anim.getClipDurationSeconds("jump");
       if (duration <= 0) return;
+
+      if (state === GameState.TUTORIAL_PAUSE) {
+        setGameState(GameState.GAMEPLAY);
+        opacityTo(this.hand?.node, 0, this.opacityDuration);
+        opacityTo(this.actionText?.node, 0, this.opacityDuration);
+      }
 
       this._grounded = false;
 

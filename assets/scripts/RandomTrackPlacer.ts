@@ -10,16 +10,16 @@ import {
   UITransform,
   Vec2,
 } from "cc";
-import { GameManager } from "./GameManager";
 import { GameState, getGameState } from "./state/GameState";
 
 const { ccclass, property } = _decorator;
 
+/**
+ * Spawns random prefabs along X from `startPoint` and re-places segments that have scrolled past the left edge.
+ * Attach to the track root: children are spawned under `this.node`. Pair with {@link ContainerChildrenScroll} on the same node for motion.
+ */
 @ccclass("RandomTrackPlacer")
 export class RandomTrackPlacer extends Component {
-  @property(Node)
-  container: Node | null = null;
-
   @property(Vec2)
   startPoint: Vec2 = new Vec2(0, 0);
 
@@ -35,15 +35,6 @@ export class RandomTrackPlacer extends Component {
   @property({ type: CCFloat, min: 0, max: 1, slide: true })
   skipChance: number = 0.2;
 
-  @property(CCFloat)
-  scrollSpeed: number = 200;
-
-  @property(CCBoolean)
-  useGlobalGameScrollSpeed: boolean = false;
-
-  @property(GameManager)
-  gameManager: GameManager | null = null;
-
   @property(CCBoolean)
   preventSameAsPrevious: boolean = false;
 
@@ -55,33 +46,18 @@ export class RandomTrackPlacer extends Component {
     this._spawnInitial();
   }
 
-  update(dt: number) {
+  update(_dt: number) {
     const s = getGameState();
     if (s !== GameState.GAMEPLAY && s !== GameState.TUTORIAL) return;
-
-    const dx = this._getScrollSpeedPxPerSec() * dt;
-    for (const node of this._activeNodes) {
-      const p = node.position;
-      node.setPosition(p.x - dx, p.y, p.z);
-    }
 
     this._recycleOffscreenNodes();
   }
 
-  private _getScrollSpeedPxPerSec(): number {
-    if (this.useGlobalGameScrollSpeed) {
-      if (this.gameManager) {
-        return this.gameManager.gameScrollSpeed;
-      }
-      console.warn("RandomTrackPlacer: Use Global Game Scroll Speed is on but Game Manager is not assigned.");
-    }
-    return this.scrollSpeed;
-  }
-
   private _spawnInitial(): void {
-    const parent = this.container;
     const pool = this.objectPool;
-    if (!parent || pool.length === 0 || this.initialCount <= 0) return;
+    if (pool.length === 0 || this.initialCount <= 0) return;
+
+    const parent = this.node;
 
     parent.removeAllChildren();
     this._activeNodes = [];

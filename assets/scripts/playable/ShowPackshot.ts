@@ -1,6 +1,6 @@
 import { _decorator, Component, Sprite } from "cc";
-import { GameEvents } from "./events/GameEvents";
-import { gameEventTarget } from "./events/GameEventTarget";
+import { GameEvents } from "../events/GameEvents";
+import { gameEventTarget } from "../events/GameEventTarget";
 
 const { ccclass, property } = _decorator;
 

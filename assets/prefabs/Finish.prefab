@@ -1,7 +1,7 @@
 [
   {
     "__type__": "cc.Prefab",
-    "_name": "money",
+    "_name": "Finish",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_native": "",
@@ -13,7 +13,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "money",
+    "_name": "Finish",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": null,
@@ -51,8 +51,8 @@
     },
     "_lscale": {
       "__type__": "cc.Vec3",
-      "x": 0.1,
-      "y": 0.1,
+      "x": 1,
+      "y": 1,
       "z": 1
     },
     "_mobility": 0,
@@ -79,19 +79,19 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 769,
-      "height": 439
+      "width": 382,
+      "height": 51
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
       "x": 0.5,
-      "y": 0.5
+      "y": 0
     },
     "_id": ""
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "f2dwsYZo9E2KqCU49Geb4a"
+    "fileId": "ebMJeuKitBvqnoj4xCGSp7"
   },
   {
     "__type__": "cc.Sprite",
@@ -116,7 +116,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "6b0beea2-8fa6-4b6b-a06a-3dfadcf7eced@f9941",
+      "__uuid__": "ee672344-8b40-4d06-8bdf-1743141d2f81@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -136,7 +136,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "ceC4i29IBKUb2ZZtfTnOFy"
+    "fileId": "da7RqocxtDWKJ2uhISYds5"
   },
   {
     "__type__": "cc.BoxCollider2D",
@@ -153,27 +153,27 @@
     "tag": 0,
     "_group": 1,
     "_density": 1,
-    "_sensor": true,
+    "_sensor": false,
     "_friction": 0.2,
     "_restitution": 0,
     "_offset": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": 0
+      "y": 25.5
     },
     "_size": {
       "__type__": "cc.Size",
-      "width": 769,
-      "height": 439
+      "width": 150,
+      "height": 51
     },
     "_id": ""
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "m0n3yBxCll0dR2TpVfK9nA"
+    "fileId": "04hsY3ZbdLqr8SiGMR0zJ6"
   },
   {
-    "__type__": "a1b2cPU5fZHqJsMHS4/Slts",
+    "__type__": "c4d5eb3qLlAwdLj9KW2x9jp",
     "_name": "",
     "_objFlags": 0,
     "__editorExtras__": {},
@@ -188,7 +188,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "63H86bxudEQoaKLR21Ns9C"
+    "fileId": "9fDZsA7M5A7LQLpLw5l2Cs"
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -198,7 +198,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "79KHucBmZN7pjvKEtjTVlU",
+    "fileId": "1d9qz687VCRptL7ziJgcRv",
     "instance": null,
     "targetOverrides": null
   }

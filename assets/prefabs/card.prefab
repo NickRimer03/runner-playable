@@ -1,7 +1,7 @@
 [
   {
     "__type__": "cc.Prefab",
-    "_name": "money",
+    "_name": "card",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_native": "",
@@ -13,7 +13,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "money",
+    "_name": "card",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": null,
@@ -79,8 +79,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 769,
-      "height": 439
+      "width": 806,
+      "height": 551
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -91,7 +91,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "f2dwsYZo9E2KqCU49Geb4a"
+    "fileId": "c68xLZ9whJDqeluCI/3q2A"
   },
   {
     "__type__": "cc.Sprite",
@@ -116,7 +116,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "6b0beea2-8fa6-4b6b-a06a-3dfadcf7eced@f9941",
+      "__uuid__": "85f30ab6-deea-48f7-8273-2910790f2a11@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -136,7 +136,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "ceC4i29IBKUb2ZZtfTnOFy"
+    "fileId": "5ddcgSiKhBcK6Jxo0noiyd"
   },
   {
     "__type__": "cc.BoxCollider2D",
@@ -163,17 +163,17 @@
     },
     "_size": {
       "__type__": "cc.Size",
-      "width": 769,
-      "height": 439
+      "width": 806,
+      "height": 551
     },
     "_id": ""
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "m0n3yBxCll0dR2TpVfK9nA"
+    "fileId": "c4rdBxCll0dR2TpVfK9nAb"
   },
   {
-    "__type__": "a1b2cPU5fZHqJsMHS4/Slts",
+    "__type__": "b2c3dTl9qdIuQwdLj9KW2x9",
     "_name": "",
     "_objFlags": 0,
     "__editorExtras__": {},
@@ -188,7 +188,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "63H86bxudEQoaKLR21Ns9C"
+    "fileId": "0b3+QqKPVHfK838cMjl8g2"
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -198,7 +198,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "79KHucBmZN7pjvKEtjTVlU",
+    "fileId": "709BEUgfVAEK75r95Ia3rQ",
     "instance": null,
     "targetOverrides": null
   }

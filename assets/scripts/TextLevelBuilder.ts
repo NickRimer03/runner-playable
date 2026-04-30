@@ -1,43 +1,41 @@
-import {
-  _decorator,
-  CCBoolean,
-  CCFloat,
-  Component,
-  instantiate,
-  Node,
-  Prefab,
-  TextAsset,
-  Vec2,
-} from "cc";
-import { GameManager } from "./GameManager";
-import { GameState, getGameState } from "./state/GameState";
+import { _decorator, CCFloat, Component, instantiate, Prefab, TextAsset } from "cc";
 
 const { ccclass, property } = _decorator;
 
-/** Builds a 3-row level from a text asset: line 1 = top, 2 = middle, 3 = low. Each char is one cell; space = empty; M = money. */
+/**
+ * One non-empty line per level (top to bottom). Row index `i` is placed at `topLevelY + i * levelYOffset`.
+ * Each character is a cell; space, tab, or `.` = empty; M = money; C = cone; E = enemy; T = tutorial pause trigger; P = card; R = random (money or card with equal chance); F = finish line. Trailing blank lines in the file are ignored.
+ * Attach to the level root: spawned objects are children of `this.node`. Pair with {@link ContainerChildrenScroll} on the same node for motion.
+ */
 @ccclass("TextLevelBuilder")
 export class TextLevelBuilder extends Component {
   @property(TextAsset)
   levelText: TextAsset | null = null;
 
-  @property(Node)
-  container: Node | null = null;
-
   @property(Prefab)
   moneyPrefab: Prefab | null = null;
 
-  /** Extra offset per column index: affects X (.x) and Y (.y) on top of row / column layout. */
-  @property(Vec2)
-  cellSpacing: Vec2 = new Vec2(0, 0);
+  @property(Prefab)
+  conePrefab: Prefab | null = null;
+
+  @property(Prefab)
+  enemyPrefab: Prefab | null = null;
+
+  @property(Prefab)
+  tutorialPauseTriggerPrefab: Prefab | null = null;
+
+  @property(Prefab)
+  cardPrefab: Prefab | null = null;
+
+  @property(Prefab)
+  finishPrefab: Prefab | null = null;
 
   @property(CCFloat)
   topLevelY: number = 0;
 
+  /** Added per row: row 0 uses `topLevelY`, row 1 uses `topLevelY + levelYOffset`, row 2 uses `topLevelY + 2 * levelYOffset`, etc. */
   @property(CCFloat)
-  middleLevelY: number = -30;
-
-  @property(CCFloat)
-  lowLevelY: number = -60;
+  levelYOffset: number = -30;
 
   @property(CCFloat)
   firstCellXStart: number = 300;
@@ -45,101 +43,81 @@ export class TextLevelBuilder extends Component {
   @property(CCFloat)
   cellXOffset: number = 300;
 
-  @property(CCFloat)
-  scrollSpeed: number = 200;
-
-  @property(CCBoolean)
-  useGlobalGameScrollSpeed: boolean = false;
-
-  @property(GameManager)
-  gameManager: GameManager | null = null;
-
-  private _levelNodes: Node[] = [];
-
   onLoad() {
     this.buildLevel();
   }
 
-  update(dt: number) {
-    const s = getGameState();
-    if (s !== GameState.GAMEPLAY && s !== GameState.TUTORIAL) return;
-
-    const dx = this._getScrollSpeedPxPerSec() * dt;
-    for (const node of this._levelNodes) {
-      if (node == null || !node.isValid) continue;
-      const p = node.position;
-      node.setPosition(p.x - dx, p.y, p.z);
-    }
-  }
-
   buildLevel(): void {
-    const parent = this.container;
-    if (!parent || !this.levelText?.text) return;
+    if (!this.levelText?.text) return;
 
-    parent.removeAllChildren();
-    this._levelNodes.length = 0;
+    this.node.removeAllChildren();
 
     const lines = this.levelText.text.split(/\r?\n/);
     while (lines.length > 0 && lines[lines.length - 1]?.trim() === "") {
       lines.pop();
     }
 
-    if (lines.length < 3) {
-      console.warn("TextLevelBuilder: need at least 3 lines (top, middle, low).");
+    if (lines.length < 1) {
+      console.warn("TextLevelBuilder: need at least one level line in the text asset.");
       return;
     }
 
-    const rowYs = [this.topLevelY, this.middleLevelY, this.lowLevelY];
-
-    for (let row = 0; row < 3; row++) {
+    for (let row = 0; row < lines.length; row++) {
       const line = lines[row] ?? "";
-      const baseY = rowYs[row] ?? 0;
+      const baseY = this.topLevelY + row * this.levelYOffset;
       for (let col = 0; col < line.length; col++) {
         const ch = line[col];
-        if (ch === " " || ch === "\t") continue;
+        if (this._isEmptyCell(ch)) continue;
 
-        const x =
-          this.firstCellXStart + col * this.cellXOffset + col * this.cellSpacing.x;
-        const y = baseY + col * this.cellSpacing.y;
+        const x = this.firstCellXStart + col * this.cellXOffset;
+        const y = baseY;
         this._spawnCell(ch, x, y);
       }
     }
   }
 
-  private _spawnCell(symbol: string, x: number, y: number): void {
-    const parent = this.container;
-    if (!parent) return;
+  private _isEmptyCell(ch: string): boolean {
+    return ch === " " || ch === "\t" || ch === ".";
+  }
 
+  private _spawnCell(symbol: string, x: number, y: number): void {
     const prefab = this._prefabForSymbol(symbol);
     if (!prefab) {
-      if (symbol !== " " && symbol !== "\t") {
+      if (!this._isEmptyCell(symbol)) {
         console.warn(`TextLevelBuilder: no prefab for symbol "${symbol}".`);
       }
       return;
     }
 
     const node = instantiate(prefab);
-    parent.addChild(node);
+    this.node.addChild(node);
     node.setPosition(x, y, node.position.z);
-    this._levelNodes.push(node);
   }
 
-  private _getScrollSpeedPxPerSec(): number {
-    if (this.useGlobalGameScrollSpeed) {
-      if (this.gameManager) {
-        return this.gameManager.gameScrollSpeed;
-      }
-      console.warn(
-        "TextLevelBuilder: Use Global Game Scroll Speed is on but Game Manager is not assigned.",
-      );
-    }
-    return this.scrollSpeed;
+  /** 50/50 money vs card when both are assigned; otherwise the one that exists. */
+  private _randomMoneyOrCardPrefab(): Prefab | null {
+    const money = this.moneyPrefab;
+    const card = this.cardPrefab;
+    if (money && card) return Math.random() < 0.5 ? money : card;
+    return money ?? card ?? null;
   }
 
   private _prefabForSymbol(symbol: string): Prefab | null {
     switch (symbol) {
       case "M":
         return this.moneyPrefab;
+      case "C":
+        return this.conePrefab;
+      case "E":
+        return this.enemyPrefab;
+      case "T":
+        return this.tutorialPauseTriggerPrefab;
+      case "P":
+        return this.cardPrefab;
+      case "R":
+        return this._randomMoneyOrCardPrefab();
+      case "F":
+        return this.finishPrefab;
       default:
         return null;
     }

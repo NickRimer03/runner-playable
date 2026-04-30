@@ -11,7 +11,7 @@
     "6c48a": {
       "importer": "texture",
       "uuid": "81e7d3a3-6cc2-4831-b4bf-3c50e69f3db2@6c48a",
-      "displayName": "card",
+      "displayName": "currency",
       "id": "6c48a",
       "name": "texture",
       "userData": {
@@ -35,7 +35,7 @@
     "f9941": {
       "importer": "sprite-frame",
       "uuid": "81e7d3a3-6cc2-4831-b4bf-3c50e69f3db2@f9941",
-      "displayName": "card",
+      "displayName": "currency",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
