@@ -19,6 +19,7 @@ import {
   Vec3,
 } from "cc";
 import { CharacterCollision } from "./CharacterCollision";
+import { ConfettiBurst } from "./effects/ConfettiBurst";
 import { GameEvents } from "./events/GameEvents";
 import { gameEventTarget } from "./events/GameEventTarget";
 import { CardPickup } from "./marker/CardPickup";
@@ -89,11 +90,23 @@ export class GameManager extends Component {
   private _lastCongratsPhraseIndex = -1;
 
   onLoad() {
+    this._ensureConfettiBurstLayer();
     const char = this.characterNode;
     if (!char) return;
     if (!char.getComponent(CharacterCollision)) {
       char.addComponent(CharacterCollision);
     }
+  }
+
+  /** One UI layer for win confetti if the scene has no {@link ConfettiBurst} yet. */
+  private _ensureConfettiBurstLayer(): void {
+    if (this.node.getComponentsInChildren(ConfettiBurst).length > 0) {
+      return;
+    }
+    const layer = new Node("_ConfettiBurst");
+    this.node.addChild(layer);
+    layer.setSiblingIndex(this.node.children.length - 1);
+    layer.addComponent(ConfettiBurst);
   }
 
   onEnable() {
@@ -184,9 +197,7 @@ export class GameManager extends Component {
     const wasScrolling = this._scrollBackground;
     this._scrollBackground = scroll;
     const skipStepFromPauseResume =
-      prevState !== undefined &&
-      prevState === GameState.TUTORIAL_PAUSE &&
-      state === GameState.GAMEPLAY;
+      prevState !== undefined && prevState === GameState.TUTORIAL_PAUSE && state === GameState.GAMEPLAY;
     if (scroll && !wasScrolling && this._grounded && !skipStepFromPauseResume) {
       gameEventTarget.emit(GameEvents.CHARACTER_STEP);
     } else if (!scroll && wasScrolling) {
@@ -198,8 +209,7 @@ export class GameManager extends Component {
     const root = this.node.scene;
     if (!root) return;
     this._visitEnemies(root, (node) => {
-      const anim =
-        node.getComponent(TexturePackSpriteAnimation) ?? node.getComponentInChildren(TexturePackSpriteAnimation);
+      const anim = node.getComponent(TexturePackSpriteAnimation) ?? node.getComponentInChildren(TexturePackSpriteAnimation);
       anim?.freezeAtFirstFrame();
     });
   }
@@ -217,8 +227,7 @@ export class GameManager extends Component {
     const root = this.node.scene;
     if (!root) return;
     this._visitEnemies(root, (node) => {
-      const anim =
-        node.getComponent(TexturePackSpriteAnimation) ?? node.getComponentInChildren(TexturePackSpriteAnimation);
+      const anim = node.getComponent(TexturePackSpriteAnimation) ?? node.getComponentInChildren(TexturePackSpriteAnimation);
       anim?.play("run");
     });
   }
@@ -302,6 +311,9 @@ export class GameManager extends Component {
     this.characterNode?.getComponent(TexturePackSpriteAnimation)?.play("idle");
 
     gameEventTarget.emit(fail ? GameEvents.GAME_FAIL : GameEvents.GAME_SUCCESS);
+    if (!fail) {
+      gameEventTarget.emit(GameEvents.CONFETTI_BURST);
+    }
     gameEventTarget.emit(GameEvents.GAME_SHOW_PACKSHOT, fail);
   }
 
@@ -349,11 +361,7 @@ export class GameManager extends Component {
     const endEuler = new Vec3(copy.eulerAngles.x, copy.eulerAngles.y, ez);
 
     tween(copy)
-      .to(
-        dur,
-        { position: end, scale: endScale, eulerAngles: endEuler },
-        { easing: "quadIn" },
-      )
+      .to(dur, { position: end, scale: endScale, eulerAngles: endEuler }, { easing: "quadIn" })
       .call(() => {
         if (copy.isValid) copy.destroy();
       })

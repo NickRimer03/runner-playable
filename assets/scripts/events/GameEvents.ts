@@ -7,7 +7,7 @@ export enum GameEvents {
   CHARACTER_JUMP,
   CHARACTER_STEP,
   CHARACTER_STOP,
-  
+
   MONEY_COLLECTED,
   CARD_COLLECTED,
   COLLECTIBLE_FLY,
@@ -16,6 +16,9 @@ export enum GameEvents {
   GAME_SHOW_PACKSHOT,
   GAME_FAIL,
   GAME_SUCCESS,
+
+  /** Fired when the character wins (after {@link GAME_SUCCESS}). Listeners: {@link ConfettiBurst}. */
+  CONFETTI_BURST,
 
   FINAL_CURRENCY_ANIMATE,
 
