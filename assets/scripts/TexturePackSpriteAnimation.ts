@@ -144,6 +144,25 @@ export class TexturePackSpriteAnimation extends Component {
     this._onClipComplete = null;
   }
 
+  /**
+   * Stop playback and set the sprite to frame 0 of `clip`.
+   * If `clip` is omitted, uses the clip currently playing, falling back to {@link initialClip}.
+   */
+  freezeAtFirstFrame(clip?: string): void {
+    const target = clip ?? (this._currentClip || this.initialClip);
+    const frames = this._clips.get(target);
+    if (!frames?.length || !this.sprite) {
+      return;
+    }
+
+    this._playing = false;
+    this._onClipComplete = null;
+    this._currentClip = target;
+    this._frameIndex = 0;
+    this._elapsed = 0;
+    this._applyFrame();
+  }
+
   get clipNames(): string[] {
     return [...this._clipNames];
   }

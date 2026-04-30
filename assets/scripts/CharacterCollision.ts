@@ -78,14 +78,13 @@ export class CharacterCollision extends Component {
     if (s !== GameState.GAMEPLAY && s !== GameState.TUTORIAL) return;
 
     if (this._nodeChainHasFinishTrigger(otherCollider.node)) {
-      setGameState(GameState.FINISH);
+      gameEventTarget.emit(GameEvents.GAME_FINISH);
       return;
     }
 
     const collectible = this._findCollectible(otherCollider.node);
     if (collectible) {
-      gameEventTarget.emit(collectible.event, collectible.event);
-      collectible.root.destroy();
+      gameEventTarget.emit(GameEvents.COLLECTIBLE_FLY, collectible.root);
       return;
     }
 
@@ -134,23 +133,10 @@ export class CharacterCollision extends Component {
       .start();
   }
 
-  /**
-   * Resolves a money/card pickup from the contacted node (marker on an ancestor, or root named `money` / `card`).
-   */
-  private _findCollectible(
-    start: Node,
-  ): { root: Node; event: GameEvents } | null {
+  private _findCollectible(start: Node): { root: Node } | null {
     let n: Node | null = start;
     while (n) {
-      if (n.getComponent(MoneyPickup)) return { root: n, event: GameEvents.MONEY_COLLECTED };
-      if (n.getComponent(CardPickup)) return { root: n, event: GameEvents.CARD_COLLECTED };
-      n = n.parent;
-    }
-    n = start;
-    while (n) {
-      const key = n.name.toLowerCase();
-      if (key === "money") return { root: n, event: GameEvents.MONEY_COLLECTED };
-      if (key === "card") return { root: n, event: GameEvents.CARD_COLLECTED };
+      if (n.getComponent(MoneyPickup) || n.getComponent(CardPickup)) return { root: n };
       n = n.parent;
     }
     return null;
@@ -190,7 +176,7 @@ export class CharacterCollision extends Component {
   private _nodeChainHasFinishTrigger(start: Node | null): boolean {
     let n: Node | null = start;
     while (n) {
-      if (n.getComponent(FinishTrigger) || n.name.toLowerCase() === "finish") return true;
+      if (n.getComponent(FinishTrigger)) return true;
       n = n.parent;
     }
     return false;

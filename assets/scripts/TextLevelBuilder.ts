@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, Component, instantiate, Prefab, TextAsset } from "cc";
+import { _decorator, CCFloat, CCInteger, Component, instantiate, Prefab, TextAsset } from "cc";
 
 const { ccclass, property } = _decorator;
 
@@ -43,6 +43,11 @@ export class TextLevelBuilder extends Component {
   @property(CCFloat)
   cellXOffset: number = 300;
 
+  @property({ type: CCInteger, min: 0 })
+  coneCountEvadePlateOn: number = 2;
+
+  private _coneSpawnCount = 0;
+
   onLoad() {
     this.buildLevel();
   }
@@ -51,6 +56,7 @@ export class TextLevelBuilder extends Component {
     if (!this.levelText?.text) return;
 
     this.node.removeAllChildren();
+    this._coneSpawnCount = 0;
 
     const lines = this.levelText.text.split(/\r?\n/);
     while (lines.length > 0 && lines[lines.length - 1]?.trim() === "") {
@@ -92,6 +98,14 @@ export class TextLevelBuilder extends Component {
     const node = instantiate(prefab);
     this.node.addChild(node);
     node.setPosition(x, y, node.position.z);
+
+    if (symbol === "C") {
+      const plate = node.getChildByName("plate");
+      if (plate) {
+        plate.active = this._coneSpawnCount < this.coneCountEvadePlateOn;
+      }
+      this._coneSpawnCount++;
+    }
   }
 
   /** 50/50 money vs card when both are assigned; otherwise the one that exists. */
