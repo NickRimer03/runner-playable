@@ -72,7 +72,7 @@ export class CurrencyManager extends Component {
     Tween.stopAllByTarget(this._finalCurrencyTweenTarget);
     const end = this._currency;
     this._finalCurrencyTweenTarget.value = 0;
-    label.string = `${this.textPrefix}0.00`;
+    label.string = `${this.textPrefix}${this._formatCurrencyForLabel(0)}`;
 
     tween(this._finalCurrencyTweenTarget)
       .to(
@@ -80,12 +80,13 @@ export class CurrencyManager extends Component {
         { value: end },
         {
           onUpdate: () => {
-            label.string = `${this.textPrefix}${this._finalCurrencyTweenTarget.value.toFixed(2)}`;
+            const v = Math.round(this._finalCurrencyTweenTarget.value);
+            label.string = `${this.textPrefix}${this._formatCurrencyForLabel(v)}`;
           },
         },
       )
       .call(() => {
-        label.string = `${this.textPrefix}${end.toFixed(2)}`;
+        label.string = `${this.textPrefix}${this._formatCurrencyForLabel(end)}`;
       })
       .start();
   };
@@ -110,10 +111,31 @@ export class CurrencyManager extends Component {
     this._updateLabel();
   }
 
+  private _formatMillionsCompact(value: number): string {
+    const tenths = Math.round(value / 100_000);
+    const whole = Math.floor(tenths / 10);
+    const frac = tenths % 10;
+    return frac === 0 ? `${whole}M` : `${whole}.${frac}M`;
+  }
+
+  private _formatCurrencyForLabel(value: number): string {
+    if (value < 1000) {
+      return `${value}`;
+    }
+    if (value >= 1_000_000) {
+      return this._formatMillionsCompact(value);
+    }
+    const k = Math.round(value / 1000);
+    if (k >= 1000) {
+      return this._formatMillionsCompact(value);
+    }
+    return `${k}k`;
+  }
+
   private _updateLabel(): void {
     const label = this.currencyTextLabel;
     if (!label) return;
 
-    label.string = `${this.textPrefix}${this._currency}`;
+    label.string = `${this.textPrefix}${this._formatCurrencyForLabel(this._currency)}`;
   }
 }

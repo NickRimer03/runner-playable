@@ -3,6 +3,7 @@ import {
   BoxCollider2D,
   CCFloat,
   CCInteger,
+  CCString,
   Component,
   instantiate,
   Label,
@@ -35,8 +36,8 @@ const { ccclass, property } = _decorator;
 const CHARACTER_INSPECTOR_GROUP = { name: "Character", id: "character" };
 const CURRENCY_COLLECT_FLY_GROUP = { name: "Currency collect fly", id: "currency-collect-fly" };
 const CURRENCY_CONGRATS_GROUP = { name: "Currency congrats", id: "currency-congrats" };
-
-const CONGRATS_PHRASES = ["Fantastic!", "Great!", "Awesome!", "Perfect!"] as const;
+const TUTORIAL_HINT_GROUP = { name: "Tutorial hint", id: "tutorial-hint" };
+const CONGRATS_PHRASES_GROUP = { name: "Congrats phrases", id: "congrats-phrases" };
 
 @ccclass("GameManager")
 export class GameManager extends Component {
@@ -48,6 +49,9 @@ export class GameManager extends Component {
 
   @property(Label)
   actionText: Label | null = null;
+
+  @property({ group: TUTORIAL_HINT_GROUP })
+  tutorialJumpHintText: string = "Jump to avoid enemies";
 
   @property(CCFloat)
   gameScrollSpeed: number = 200;
@@ -84,6 +88,9 @@ export class GameManager extends Component {
 
   @property({ type: CCFloat, group: CURRENCY_CONGRATS_GROUP })
   congratsPauseDuration: number = 0.45;
+
+  @property({ type: [CCString], group: CONGRATS_PHRASES_GROUP })
+  congratsPhrases: string[] = ["Fantastic!", "Great!", "Awesome!", "Perfect!"];
 
   private _scrollBackground = false;
   private _characterGroundY: number | null = null;
@@ -204,7 +211,7 @@ export class GameManager extends Component {
     if (state === GameState.TUTORIAL_PAUSE) {
       const label = this.actionText;
       if (label) {
-        label.string = "Jump to avoid enemies";
+        label.string = this.tutorialJumpHintText;
       }
       this.characterNode?.getComponent(TexturePackSpriteAnimation)?.play("idle");
       this._freezeEnemiesAtFirstFrame();
@@ -414,8 +421,9 @@ export class GameManager extends Component {
     this.node.addChild(node);
 
     const label = node.getComponent(Label) ?? node.getComponentInChildren(Label);
-    if (label) {
-      const count = CONGRATS_PHRASES.length;
+    const phrases = this.congratsPhrases;
+    if (label && phrases.length > 0) {
+      const count = phrases.length;
       const prev = this._lastCongratsPhraseIndex;
       let idx = 0;
       if (count <= 1) {
@@ -428,7 +436,7 @@ export class GameManager extends Component {
         idx = choices[Math.floor(Math.random() * choices.length)]!;
       }
       this._lastCongratsPhraseIndex = idx;
-      label.string = CONGRATS_PHRASES[idx]!;
+      label.string = phrases[idx]!;
     }
 
     const sx = this.congratsStartPos.x;
