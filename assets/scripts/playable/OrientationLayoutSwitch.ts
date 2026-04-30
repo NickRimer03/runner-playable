@@ -25,7 +25,6 @@ export class OrientationLayoutSwitch extends Component {
   @property(CCBoolean)
   switchRotation = false;
 
-  /** Euler X and Y in degrees; Z is left from the node (editor) so 2D Z-rotation is preserved. */
   @property(Vec2)
   portraitRotation: Vec2 = new Vec2(0, 0);
 

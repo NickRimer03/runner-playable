@@ -12,7 +12,6 @@ export enum GameEvents {
   CARD_COLLECTED,
   COLLECTIBLE_FLY,
 
-  /** Player entered finish-line NoJump zone; jump disabled until level ends / new run. */
   NO_JUMP_LOCK,
 
   GAME_FINISH,
@@ -20,7 +19,6 @@ export enum GameEvents {
   GAME_FAIL,
   GAME_SUCCESS,
 
-  /** Fired when the character wins (after {@link GAME_SUCCESS}). Listeners: {@link ConfettiBurst}. */
   CONFETTI_BURST,
 
   FINAL_CURRENCY_ANIMATE,
@@ -29,7 +27,6 @@ export enum GameEvents {
 
   GAME_STATE_SET,
 
-  /** `emit` passes `"portrait" | "landscape"` when canvas size / orientation changes. */
   ORIENTATION_CHANGED,
 
   REDIRECT_PROCESSING,

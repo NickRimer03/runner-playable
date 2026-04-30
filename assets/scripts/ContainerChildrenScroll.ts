@@ -36,8 +36,7 @@ export class ContainerChildrenScroll extends Component {
 
   /** Uses {@link ScrollSpeedOverride} on `child` or its descendants when present; otherwise the container’s shared speed. */
   private _speedPxPerSecForChild(child: Node, commonSpeedPxPerSec: number): number {
-    const o =
-      child.getComponent(ScrollSpeedOverride) ?? child.getComponentInChildren(ScrollSpeedOverride);
+    const o = child.getComponent(ScrollSpeedOverride) ?? child.getComponentInChildren(ScrollSpeedOverride);
     if (o) {
       return o.speedPxPerSec;
     }
@@ -49,9 +48,7 @@ export class ContainerChildrenScroll extends Component {
       if (this.gameManager) {
         return this.gameManager.gameScrollSpeed;
       }
-      console.warn(
-        "ContainerChildrenScroll: Use Global Game Scroll Speed is on but Game Manager is not assigned.",
-      );
+      console.warn("ContainerChildrenScroll: Use Global Game Scroll Speed is on but Game Manager is not assigned.");
     }
     return this.scrollSpeed;
   }

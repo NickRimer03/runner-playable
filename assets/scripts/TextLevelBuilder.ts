@@ -30,7 +30,6 @@ export class TextLevelBuilder extends Component {
   @property(CCFloat)
   topLevelY: number = 0;
 
-  /** Added per row: row 0 uses `topLevelY`, row 1 uses `topLevelY + levelYOffset`, row 2 uses `topLevelY + 2 * levelYOffset`, etc. */
   @property(CCFloat)
   levelYOffset: number = -30;
 
@@ -105,7 +104,6 @@ export class TextLevelBuilder extends Component {
     }
   }
 
-  /** 50/50 money vs card when both are assigned; otherwise the one that exists. */
   private _randomMoneyOrCardPrefab(): Prefab | null {
     const money = this.moneyPrefab;
     const card = this.cardPrefab;

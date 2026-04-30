@@ -1,15 +1,4 @@
-import {
-  _decorator,
-  CCBoolean,
-  CCFloat,
-  CCInteger,
-  Component,
-  instantiate,
-  Node,
-  Prefab,
-  UITransform,
-  Vec2,
-} from "cc";
+import { _decorator, CCBoolean, CCFloat, CCInteger, Component, instantiate, Node, Prefab, UITransform, Vec2 } from "cc";
 import { GameState, getGameState } from "./state/GameState";
 
 const { ccclass, property } = _decorator;
@@ -106,10 +95,7 @@ export class RandomTrackPlacer extends Component {
     off.sort((a, b) => a.position.x - b.position.x);
 
     const on = this._activeNodes.filter((n) => this._imageRightX(n) > 0);
-    let tail =
-      on.length > 0
-        ? Math.max(...on.map((n) => n.position.x))
-        : this.startPoint.x - this.offsetX;
+    let tail = on.length > 0 ? Math.max(...on.map((n) => n.position.x)) : this.startPoint.x - this.offsetX;
 
     const y = this.startPoint.y;
     for (const node of off) {

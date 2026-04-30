@@ -4,10 +4,6 @@ const { ccclass, property } = _decorator;
 
 const DEG = Math.PI / 180;
 
-/**
- * Finish line: both `rope_left` and `rope_right` stay **pinned** (rotation only around anchors).
- * Same pendulum-style motion + decaying flex wobble; right rope equilibrium Z is offset by `rightFinalZOffsetDeg` (default 180°).
- */
 @ccclass("FinishTrigger")
 export class FinishTrigger extends Component {
   @property
@@ -119,9 +115,7 @@ export class FinishTrigger extends Component {
     const accL =
       G * Math.sin((this._eqLeftZ - this._leftZ) * DEG) - drag * this._leftVel + pull * (this._eqLeftZ - this._leftZ);
     const accR =
-      G * Math.sin((this._eqRightZ - this._rightZ) * DEG) -
-      drag * this._rightVel +
-      pull * (this._eqRightZ - this._rightZ);
+      G * Math.sin((this._eqRightZ - this._rightZ) * DEG) - drag * this._rightVel + pull * (this._eqRightZ - this._rightZ);
 
     this._leftVel += accL * dt;
     this._rightVel += accR * dt;
@@ -136,8 +130,7 @@ export class FinishTrigger extends Component {
     L.setRotationFromEuler(this._eulerLX, this._eulerLY, this._leftZ + wL);
     R.setRotationFromEuler(this._eulerRX, this._eulerRY, this._rightZ + wR);
 
-    const vOk =
-      Math.abs(this._leftVel) < this.settleVelThreshold && Math.abs(this._rightVel) < this.settleVelThreshold;
+    const vOk = Math.abs(this._leftVel) < this.settleVelThreshold && Math.abs(this._rightVel) < this.settleVelThreshold;
     const aOk =
       Math.abs(this._eqLeftZ - this._leftZ) < this.settleAngleThreshold &&
       Math.abs(this._eqRightZ - this._rightZ) < this.settleAngleThreshold;

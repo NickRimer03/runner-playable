@@ -75,11 +75,15 @@ export class CurrencyManager extends Component {
     label.string = `${this.textPrefix}0.00`;
 
     tween(this._finalCurrencyTweenTarget)
-      .to(this.finalCurrencyAnimateDuration, { value: end }, {
-        onUpdate: () => {
-          label.string = `${this.textPrefix}${this._finalCurrencyTweenTarget.value.toFixed(2)}`;
+      .to(
+        this.finalCurrencyAnimateDuration,
+        { value: end },
+        {
+          onUpdate: () => {
+            label.string = `${this.textPrefix}${this._finalCurrencyTweenTarget.value.toFixed(2)}`;
+          },
         },
-      })
+      )
       .call(() => {
         label.string = `${this.textPrefix}${end.toFixed(2)}`;
       })

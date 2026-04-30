@@ -35,7 +35,6 @@ export class ShowPackshot extends Component {
   @property(Sprite)
   ctaSuccess: Sprite | null = null;
 
-  /** These nodes fade out with the packshot (same timing as the blackening intro). */
   @property({ type: [Node] })
   hide: Node[] = [];
 
@@ -45,7 +44,6 @@ export class ShowPackshot extends Component {
   @property(Label)
   nextPaymentLabel: Label | null = null;
 
-  /** Staggered scale-in for `showOnFail` / `showOnSuccess` items (gap seconds between starts). */
   private async _cascadeAppear(nodes: (Node | null | undefined)[]): Promise<void> {
     const items = nodes.filter((x): x is Node => !!x);
     const gapSec = this.appearTimeGap;
@@ -56,7 +54,9 @@ export class ShowPackshot extends Component {
       const z = item.scale.z;
       const target = item.getComponent(Appearance)?.appearScale ?? 1;
 
-      tween(item).to(dur, { scale: new Vec3(target, target, z) }, { easing: "backOut" }).start();
+      tween(item)
+        .to(dur, { scale: new Vec3(target, target, z) }, { easing: "backOut" })
+        .start();
 
       if (i < items.length - 1 && gapSec > 0) {
         await new Promise<void>((resolve) => {
