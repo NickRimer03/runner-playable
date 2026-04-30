@@ -6906,8 +6906,8 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "iOsUrl": "https://app.plbx.ai/",
-    "androidUrl": "https://app.plbx.ai/",
+    "iOsUrl": "https://apps.apple.com/app/ad-testing/id1463016906",
+    "androidUrl": "https://play.google.com/store/apps/details?id=com.unity3d.auicreativetestapp",
     "_id": "e2uFJOU1NALbLka0wRKE1h"
   },
   {
@@ -6956,7 +6956,7 @@
       "__expectedType__": "cc.AudioClip"
     },
     "isLoop": true,
-    "volume": 0.5,
+    "volume": 0.4,
     "limitNumberSounds": true,
     "countSound": 1
   },
@@ -6967,7 +6967,7 @@
       "__expectedType__": "cc.AudioClip"
     },
     "isLoop": false,
-    "volume": 0.8,
+    "volume": 0.9,
     "limitNumberSounds": false,
     "countSound": 3
   },
