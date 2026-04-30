@@ -1,4 +1,20 @@
-import { Node, Tween, tween, UIOpacity } from "cc";
+import { Node, screen, Tween, tween, UIOpacity, view } from "cc";
+
+export type ScreenOrientation = "portrait" | "landscape";
+
+export function getCanvasSize(): { w: number; h: number } {
+  const winSize = screen.windowSize;
+  const scaleX = view.getScaleX();
+  const scaleY = view.getScaleY();
+  const w = winSize.width / scaleX;
+  const h = winSize.height / scaleY;
+  return { w, h };
+}
+
+export function getOrientation(size?: { w: number; h: number }): ScreenOrientation {
+  const { w, h } = size ?? getCanvasSize();
+  return w > h ? "landscape" : "portrait";
+}
 
 export function promiseTween<T = any>(tween: Tween<any>) {
   return new Promise<T>((resolve) => tween.call(resolve).start());

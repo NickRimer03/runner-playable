@@ -4,7 +4,7 @@ const { ccclass, property } = _decorator;
 
 /**
  * One non-empty line per level (top to bottom). Row index `i` is placed at `topLevelY + i * levelYOffset`.
- * Each character is a cell; space, tab, or `.` = empty; M = money; C = cone; E = enemy; T = tutorial pause trigger; P = card; R = random (money or card with equal chance); F = finish line. Trailing blank lines in the file are ignored.
+ * Each character is a cell; space, tab, or `.` = empty; M = money; C = cone; E = enemy; P = card; R = random (money or card with equal chance); F = finish line. Trailing blank lines in the file are ignored.
  * Attach to the level root: spawned objects are children of `this.node`. Pair with {@link ContainerChildrenScroll} on the same node for motion.
  */
 @ccclass("TextLevelBuilder")
@@ -20,9 +20,6 @@ export class TextLevelBuilder extends Component {
 
   @property(Prefab)
   enemyPrefab: Prefab | null = null;
-
-  @property(Prefab)
-  tutorialPauseTriggerPrefab: Prefab | null = null;
 
   @property(Prefab)
   cardPrefab: Prefab | null = null;
@@ -124,8 +121,6 @@ export class TextLevelBuilder extends Component {
         return this.conePrefab;
       case "E":
         return this.enemyPrefab;
-      case "T":
-        return this.tutorialPauseTriggerPrefab;
       case "P":
         return this.cardPrefab;
       case "R":

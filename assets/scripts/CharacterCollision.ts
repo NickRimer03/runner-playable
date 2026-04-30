@@ -12,14 +12,13 @@ import {
   Tween,
   tween,
 } from "cc";
+import { GameEvents } from "./events/GameEvents";
+import { gameEventTarget } from "./events/GameEventTarget";
 import { CardPickup } from "./marker/CardPickup";
 import { ConeHazard } from "./marker/ConeHazard";
 import { EnemyHazard } from "./marker/EnemyHazard";
 import { FinishTrigger } from "./marker/FinishTrigger";
 import { MoneyPickup } from "./marker/MoneyPickup";
-import { TutorialPauseTrigger } from "./marker/TutorialPauseTrigger";
-import { GameEvents } from "./events/GameEvents";
-import { gameEventTarget } from "./events/GameEventTarget";
 import { GameState, getGameState, setGameState } from "./state/GameState";
 import { TexturePackSpriteAnimation } from "./TexturePackSpriteAnimation";
 
@@ -48,6 +47,12 @@ export class CharacterCollision extends Component {
   })
   finishLineRunOnSeconds: number = 1;
 
+  @property({ group: CHARACTER_INSPECTOR_GROUP, displayName: "Finish NoJump child name" })
+  finishNoJumpNodeName: string = "NoJump";
+
+  @property({ group: CHARACTER_INSPECTOR_GROUP, displayName: "Enemy pause child name" })
+  enemyTutorialPauseNodeName: string = "Pause";
+
   private _finishGracePending = false;
 
   onEnable() {
@@ -65,8 +70,7 @@ export class CharacterCollision extends Component {
   }
 
   private _subscribeCollision(isOn: boolean): void {
-    const collider =
-      this.node.getComponent(BoxCollider2D) ?? this.node.getComponentInChildren(BoxCollider2D);
+    const collider = this.node.getComponent(BoxCollider2D) ?? this.node.getComponentInChildren(BoxCollider2D);
     if (!collider) return;
 
     const fn = isOn ? "on" : "off";
@@ -78,7 +82,7 @@ export class CharacterCollision extends Component {
     otherCollider: Collider2D,
     _contact: IPhysics2DContact | null,
   ): void {
-    if (this._nodeChainHasTutorialPauseTrigger(otherCollider.node)) {
+    if (this._isEnemyTutorialPauseContact(otherCollider.node)) {
       const s = getGameState();
       if (s === GameState.TUTORIAL) {
         setGameState(GameState.TUTORIAL_PAUSE);
@@ -88,6 +92,11 @@ export class CharacterCollision extends Component {
 
     const s = getGameState();
     if (s !== GameState.GAMEPLAY && s !== GameState.TUTORIAL) return;
+
+    if (this._isFinishNoJumpContact(otherCollider.node)) {
+      gameEventTarget.emit(GameEvents.NO_JUMP_LOCK);
+      return;
+    }
 
     if (this._nodeChainHasFinishTrigger(otherCollider.node)) {
       const finishRoot = this._findFinishTriggerRoot(otherCollider.node);
@@ -180,10 +189,47 @@ export class CharacterCollision extends Component {
     return false;
   }
 
-  private _nodeChainHasTutorialPauseTrigger(start: Node | null): boolean {
+  private _isEnemyTutorialPauseContact(start: Node | null): boolean {
+    if (!start) return false;
+    const pauseName = (this.enemyTutorialPauseNodeName || "Pause").trim() || "Pause";
     let n: Node | null = start;
     while (n) {
-      if (n.getComponent(TutorialPauseTrigger)) return true;
+      if (n.name === pauseName) {
+        const hasBox = n.getComponent(BoxCollider2D) != null || n.getComponentInChildren(BoxCollider2D) != null;
+        if (!hasBox) {
+          n = n.parent;
+          continue;
+        }
+        let p: Node | null = n.parent;
+        while (p) {
+          if (p.getComponent(EnemyHazard)) return true;
+          p = p.parent;
+        }
+        return false;
+      }
+      n = n.parent;
+    }
+    return false;
+  }
+
+  private _isFinishNoJumpContact(start: Node | null): boolean {
+    if (!start) return false;
+    const jumpName = (this.finishNoJumpNodeName || "NoJump").trim() || "NoJump";
+    let n: Node | null = start;
+    while (n) {
+      if (n.name === jumpName) {
+        const hasBox = n.getComponent(BoxCollider2D) != null || n.getComponentInChildren(BoxCollider2D) != null;
+        if (!hasBox) {
+          n = n.parent;
+          continue;
+        }
+        let p: Node | null = n.parent;
+        while (p) {
+          if (p.getComponent(FinishTrigger)) return true;
+          p = p.parent;
+        }
+        return false;
+      }
       n = n.parent;
     }
     return false;

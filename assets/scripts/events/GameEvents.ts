@@ -12,6 +12,9 @@ export enum GameEvents {
   CARD_COLLECTED,
   COLLECTIBLE_FLY,
 
+  /** Player entered finish-line NoJump zone; jump disabled until level ends / new run. */
+  NO_JUMP_LOCK,
+
   GAME_FINISH,
   GAME_SHOW_PACKSHOT,
   GAME_FAIL,
@@ -25,6 +28,9 @@ export enum GameEvents {
   CURRENCY_CONGRATS,
 
   GAME_STATE_SET,
+
+  /** `emit` passes `"portrait" | "landscape"` when canvas size / orientation changes. */
+  ORIENTATION_CHANGED,
 
   REDIRECT_PROCESSING,
 

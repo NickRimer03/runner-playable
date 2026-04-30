@@ -17,6 +17,7 @@ import {
   UITransform,
   Vec2,
   Vec3,
+  view,
 } from "cc";
 import { CharacterCollision } from "./CharacterCollision";
 import { ConfettiBurst } from "./effects/ConfettiBurst";
@@ -27,7 +28,7 @@ import { EnemyHazard } from "./marker/EnemyHazard";
 import { MoneyPickup } from "./marker/MoneyPickup";
 import { GameState, getGameState, setGameState } from "./state/GameState";
 import { TexturePackSpriteAnimation } from "./TexturePackSpriteAnimation";
-import { opacityTo } from "./utils/utils";
+import { getOrientation, opacityTo } from "./utils/utils";
 
 const { ccclass, property } = _decorator;
 
@@ -88,6 +89,8 @@ export class GameManager extends Component {
   private _characterGroundY: number | null = null;
   private _grounded = true;
   private _lastCongratsPhraseIndex = -1;
+  private _jumpLocked = false;
+  private _lastOrientation: ReturnType<typeof getOrientation> | null = null;
 
   onLoad() {
     this._ensureConfettiBurstLayer();
@@ -112,10 +115,12 @@ export class GameManager extends Component {
   onEnable() {
     this._subscribeEvents(true);
     this._syncBgScrollFromState();
+    this._onCanvasResize();
   }
 
   onDisable() {
     this._subscribeEvents(false);
+    this._lastOrientation = null;
     if (this.characterNode) {
       Tween.stopAllByTarget(this.characterNode);
     }
@@ -134,7 +139,20 @@ export class GameManager extends Component {
     gameEventTarget[func](GameEvents.GAME_STATE_SET, this._onGameStateSet, this);
     gameEventTarget[func](GameEvents.COLLECTIBLE_FLY, this._onCollectibleFly, this);
     gameEventTarget[func](GameEvents.CURRENCY_CONGRATS, this._onCurrencyCongrats, this);
+    gameEventTarget[func](GameEvents.NO_JUMP_LOCK, this._onNoJumpLock, this);
+    view[func]("canvas-resize", this._onCanvasResize, this);
   }
+
+  private _onNoJumpLock = (): void => {
+    this._jumpLocked = true;
+  };
+
+  private _onCanvasResize = (): void => {
+    const orientation = getOrientation();
+    if (this._lastOrientation === orientation) return;
+    this._lastOrientation = orientation;
+    gameEventTarget.emit(GameEvents.ORIENTATION_CHANGED, orientation);
+  };
 
   update(dt: number) {
     if (!this._scrollBackground) return;
@@ -178,6 +196,9 @@ export class GameManager extends Component {
   }
 
   private _onGameStateSet(state: GameState, prevState: GameState) {
+    if (state === GameState.START) {
+      this._jumpLocked = false;
+    }
     this._syncBgScrollFromState(state, prevState);
 
     if (state === GameState.TUTORIAL_PAUSE) {
@@ -257,6 +278,10 @@ export class GameManager extends Component {
 
       if (!this._grounded) return;
 
+      if (this._jumpLocked && state === GameState.GAMEPLAY) {
+        return;
+      }
+
       const duration = anim.getClipDurationSeconds("jump");
       if (duration <= 0) {
         gameEventTarget.emit(GameEvents.CHARACTER_JUMP);
@@ -306,6 +331,7 @@ export class GameManager extends Component {
   }
 
   private _finishGame(fail: boolean = false) {
+    this._jumpLocked = false;
     setGameState(GameState.FINISH);
 
     this.characterNode?.getComponent(TexturePackSpriteAnimation)?.play("idle");

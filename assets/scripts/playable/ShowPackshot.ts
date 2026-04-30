@@ -35,8 +35,9 @@ export class ShowPackshot extends Component {
   @property(Sprite)
   ctaSuccess: Sprite | null = null;
 
-  @property(Node)
-  footer: Node | null = null;
+  /** These nodes fade out with the packshot (same timing as the blackening intro). */
+  @property({ type: [Node] })
+  hide: Node[] = [];
 
   @property(Label)
   timerLabel: Label | null = null;
@@ -83,7 +84,9 @@ export class ShowPackshot extends Component {
   private async _onShowPackshot(fail: boolean) {
     const dur = this.animationDuration;
 
-    opacityTo(this.footer, 0, dur);
+    for (const n of this.hide) {
+      opacityTo(n, 0, dur);
+    }
     await opacityToPromise(this.blackening?.node, this.blackeningOpacity * 255, dur);
 
     if (fail) {

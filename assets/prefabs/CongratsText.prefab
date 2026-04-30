@@ -39,7 +39,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 81.2,
+      "y": 26.250000000000004,
       "z": 0
     },
     "_lrot": {
@@ -51,8 +51,8 @@
     },
     "_lscale": {
       "__type__": "cc.Vec3",
-      "x": 0.5780109939577314,
-      "y": 0.5780109939577314,
+      "x": 1.3143004954840682,
+      "y": 1.3143004954840682,
       "z": 1
     },
     "_mobility": 0,
@@ -79,8 +79,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 129.7553174317037,
-      "height": 41.800000000000004
+      "width": 129.7420191089527,
+      "height": 41.8
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -118,7 +118,7 @@
     "_string": "Fantastic!",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 57.19211822660098,
+    "_actualFontSize": 68.34975369458128,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 30,
@@ -195,8 +195,8 @@
     "__prefab": {
       "__id__": 9
     },
-    "portraitWidthRatio": 0.2,
-    "portraitHeightRatio": 0.2,
+    "portraitWidthRatio": 0.33,
+    "portraitHeightRatio": 0.33,
     "portraitHorSpace": 0,
     "portraitHorSpaceType": 1,
     "portraitVerSpace": 10,
@@ -211,12 +211,12 @@
     "portraitMinMax": 1,
     "portraitFlipX": false,
     "portraitFlipY": false,
-    "enableLandscape": false,
-    "landscapeWidthRatio": 0.2,
-    "landscapeHeightRatio": 0.2,
+    "enableLandscape": true,
+    "landscapeWidthRatio": 0.21,
+    "landscapeHeightRatio": 0.21,
     "landscapeHorSpace": 0,
     "landscapeHorSpaceType": 1,
-    "landscapeVerSpace": 10,
+    "landscapeVerSpace": 7,
     "landscapeVerSpaceType": 1,
     "landscapeAlignment": "landscape-mid-center",
     "landscapeTopNodeUUID": "",
@@ -237,6 +237,7 @@
     "rotateCanvasLandscape": false,
     "changeEditorDevice": false,
     "oneTimeExecution": false,
+    "lastOrientation": false,
     "currentNodeInEditorFlag": false,
     "currentNodeInEditor": null,
     "_id": ""
