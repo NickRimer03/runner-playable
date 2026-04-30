@@ -40,12 +40,24 @@ export class CharacterCollision extends Component {
   })
   hitFlashStepSec: number = 0.05;
 
+  @property({
+    type: CCFloat,
+    group: CHARACTER_INSPECTOR_GROUP,
+    displayName: "Finish line run-on (sec)",
+    tooltip: "After touching the finish, scroll and run continue this long before the level ends.",
+  })
+  finishLineRunOnSeconds: number = 1;
+
+  private _finishGracePending = false;
+
   onEnable() {
     this._subscribeCollision(true);
   }
 
   onDisable() {
     this._subscribeCollision(false);
+    this.unschedule(this._emitFinishAfterRunOn);
+    this._finishGracePending = false;
     const flashSprite = this._getCharacterSprite();
     if (flashSprite) {
       Tween.stopAllByTarget(flashSprite);
@@ -78,7 +90,11 @@ export class CharacterCollision extends Component {
     if (s !== GameState.GAMEPLAY && s !== GameState.TUTORIAL) return;
 
     if (this._nodeChainHasFinishTrigger(otherCollider.node)) {
-      gameEventTarget.emit(GameEvents.GAME_FINISH);
+      const finishRoot = this._findFinishTriggerRoot(otherCollider.node);
+      finishRoot?.getComponent(FinishTrigger)?.playRip();
+      if (this._finishGracePending) return;
+      this._finishGracePending = true;
+      this.scheduleOnce(this._emitFinishAfterRunOn, Math.max(0, this.finishLineRunOnSeconds));
       return;
     }
 
@@ -181,4 +197,18 @@ export class CharacterCollision extends Component {
     }
     return false;
   }
+
+  private _findFinishTriggerRoot(start: Node | null): Node | null {
+    let n: Node | null = start;
+    while (n) {
+      if (n.getComponent(FinishTrigger)) return n;
+      n = n.parent;
+    }
+    return null;
+  }
+
+  private _emitFinishAfterRunOn = (): void => {
+    this._finishGracePending = false;
+    gameEventTarget.emit(GameEvents.GAME_FINISH);
+  };
 }
