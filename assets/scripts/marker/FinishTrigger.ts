@@ -1,8 +1,6 @@
-import { _decorator, CCFloat, Component, Node, Vec3 } from "cc";
+import { _decorator, CCFloat, CCInteger, Component, Mat4, Node, Sprite, UITransform, Vec3 } from "cc";
 
 const { ccclass, property } = _decorator;
-
-const DEG = Math.PI / 180;
 
 @ccclass("FinishTrigger")
 export class FinishTrigger extends Component {
@@ -12,80 +10,68 @@ export class FinishTrigger extends Component {
   @property
   ropeRightChildName: string = "rope_right";
 
+  /** Number of rigid pieces each rope is split into (more = smoother bend). */
+  @property(CCInteger)
+  ropeSegmentCount: number = 10;
+
+  /** UI-space gravity (negative Y = downward in typical canvas coordinates). */
+  @property(CCFloat)
+  ropeGravity: number = -3200;
+
+  @property(CCFloat)
+  ropeAirDamping: number = 0.995;
+
+  /** PBD distance iterations per frame (3–6 is stable). */
+  @property(CCInteger)
+  verletIterations: number = 4;
+
+  /** Initial downward speed boost along −Y (pixels/s) right after the rip. */
+  @property(CCFloat)
+  ripKickDown: number = 420;
+
+  @property(CCFloat)
+  maxSimDuration: number = 6;
+
   /**
-   * Pendulum equilibrium depth (deg) from taut rest: left settles at restZ − depth;
-   * right uses the same depth then +`rightFinalZOffsetDeg` on Z (default 180) for the sprite facing.
+   * Multiplies each rope’s `UITransform.width` for physics and segments (1 = match scene art).
+   * Values below 1 shorten both halves; does not resize the original sprites before rip.
+   */
+  @property({ type: CCFloat, min: 0.15, max: 1.5, step: 0.05 })
+  ropeLengthScale: number = 1;
+
+  /**
+   * Extra length per segment (pixels) so slices overlap slightly at joints.
+   * The rope art uses a 9-sliced sprite; without overlap, anti-alias can read as gaps.
    */
   @property(CCFloat)
-  swingDepthDeg: number = 54;
-
-  /** If greater than 0, overrides `swingDepthDeg` for the left rope only. */
-  @property(CCFloat)
-  leftSwingDepthOverride: number = 0;
-
-  /** If greater than 0, overrides `swingDepthDeg` for the right rope only. */
-  @property(CCFloat)
-  rightSwingDepthOverride: number = 0;
-
-  /** Added to right rope equilibrium Z after depth (typically 180 so the hang reads correctly). */
-  @property(CCFloat)
-  rightFinalZOffsetDeg: number = 180;
-
-  @property(CCFloat)
-  pendulumStrength: number = 620;
-
-  @property(CCFloat)
-  angularDrag: number = 3.8;
-
-  @property(CCFloat)
-  ripImpulseDegPerSec: number = 520;
-
-  @property(CCFloat)
-  settlePull: number = 22;
-
-  @property(CCFloat)
-  flexWobbleDeg: number = 4;
-
-  @property(CCFloat)
-  flexWobbleHz: number = 10;
-
-  @property(CCFloat)
-  flexWobbleDecay: number = 2.2;
-
-  @property(CCFloat)
-  maxSimDuration: number = 4.5;
-
-  @property(CCFloat)
-  settleVelThreshold: number = 4;
-
-  @property(CCFloat)
-  settleAngleThreshold: number = 1.2;
-
-  @property(CCFloat)
-  settleHoldSec: number = 0.35;
+  segmentOverlapPx: number = 2;
 
   private _ripped = false;
   private _simulating = false;
   private _simTime = 0;
-  private _settleHold = 0;
 
   private _ropeLeft: Node | null = null;
   private _ropeRight: Node | null = null;
 
-  private _restLeftZ = 0;
-  private _restRightZ = 0;
-  private _eqLeftZ = 0;
-  private _eqRightZ = 0;
+  private _anchorL = new Vec3();
+  private _anchorR = new Vec3();
+  /** Bar attachment points in `Finish` root local space (ropes stay glued while the line scrolls). */
+  private _anchorLLocal = new Vec3();
+  private _anchorRLocal = new Vec3();
+  private _restLenL = 0;
+  private _restLenR = 0;
+  private _segH = 8;
 
-  private _leftZ = 0;
-  private _rightZ = 0;
-  private _leftVel = 0;
-  private _rightVel = 0;
+  private _leftPts: Vec3[] = [];
+  private _leftPrev: Vec3[] = [];
+  private _rightPts: Vec3[] = [];
+  private _rightPrev: Vec3[] = [];
 
-  private _eulerLX = 0;
-  private _eulerLY = 0;
-  private _eulerRX = 0;
-  private _eulerRY = 0;
+  private _leftSegNodes: Node[] = [];
+  private _rightSegNodes: Node[] = [];
+
+  private readonly _tip = new Vec3();
+  private readonly _d = new Vec3();
 
   onLoad() {
     this._ropeLeft = this.node.getChildByName(this.ropeLeftChildName);
@@ -94,6 +80,7 @@ export class FinishTrigger extends Component {
 
   onDisable() {
     this._simulating = false;
+    this._clearSegmentNodes(true);
   }
 
   update(dt: number): void {
@@ -108,55 +95,30 @@ export class FinishTrigger extends Component {
     dt = Math.min(Math.max(0, dt), 0.05);
     this._simTime += dt;
 
-    const G = this.pendulumStrength;
-    const drag = this.angularDrag;
-    const pull = this.settlePull;
+    Vec3.transformMat4(this._anchorL, this._anchorLLocal, this.node.worldMatrix as Mat4);
+    Vec3.transformMat4(this._anchorR, this._anchorRLocal, this.node.worldMatrix as Mat4);
 
-    const accL =
-      G * Math.sin((this._eqLeftZ - this._leftZ) * DEG) - drag * this._leftVel + pull * (this._eqLeftZ - this._leftZ);
-    const accR =
-      G * Math.sin((this._eqRightZ - this._rightZ) * DEG) - drag * this._rightVel + pull * (this._eqRightZ - this._rightZ);
+    this._verletIntegrate(
+      this._leftPts,
+      this._leftPrev,
+      this._anchorL,
+      this._restLenL,
+      dt,
+    );
+    this._verletIntegrate(
+      this._rightPts,
+      this._rightPrev,
+      this._anchorR,
+      this._restLenR,
+      dt,
+    );
 
-    this._leftVel += accL * dt;
-    this._rightVel += accR * dt;
-    this._leftZ += this._leftVel * dt;
-    this._rightZ += this._rightVel * dt;
-
-    const wobble = this.flexWobbleDeg * Math.exp(-this.flexWobbleDecay * this._simTime);
-    const phase = this._simTime * this.flexWobbleHz * 2 * Math.PI;
-    const wL = wobble * Math.sin(phase);
-    const wR = wobble * Math.sin(phase * 1.09 + 0.5);
-
-    L.setRotationFromEuler(this._eulerLX, this._eulerLY, this._leftZ + wL);
-    R.setRotationFromEuler(this._eulerRX, this._eulerRY, this._rightZ + wR);
-
-    const vOk = Math.abs(this._leftVel) < this.settleVelThreshold && Math.abs(this._rightVel) < this.settleVelThreshold;
-    const aOk =
-      Math.abs(this._eqLeftZ - this._leftZ) < this.settleAngleThreshold &&
-      Math.abs(this._eqRightZ - this._rightZ) < this.settleAngleThreshold;
-
-    if (vOk && aOk && this._simTime > 0.12) {
-      this._settleHold += dt;
-      if (this._settleHold >= this.settleHoldSec) {
-        this._finishSim(L, R);
-      }
-    } else {
-      this._settleHold = 0;
-    }
+    this._applySegments(this._leftPts, this._leftSegNodes, this._segH);
+    this._applySegments(this._rightPts, this._rightSegNodes, this._segH);
 
     if (this._simTime >= this.maxSimDuration) {
-      this._finishSim(L, R);
+      this._simulating = false;
     }
-  }
-
-  private _finishSim(L: Node, R: Node): void {
-    this._simulating = false;
-    L.eulerAngles = new Vec3(this._eulerLX, this._eulerLY, this._eqLeftZ);
-    R.eulerAngles = new Vec3(this._eulerRX, this._eulerRY, this._eqRightZ);
-    this._leftZ = this._eqLeftZ;
-    this._rightZ = this._eqRightZ;
-    this._leftVel = 0;
-    this._rightVel = 0;
   }
 
   playRip(): void {
@@ -168,30 +130,205 @@ export class FinishTrigger extends Component {
     this._ripped = true;
     this._simulating = true;
     this._simTime = 0;
-    this._settleHold = 0;
 
-    const el = L.eulerAngles;
-    const er = R.eulerAngles;
-    this._eulerLX = el.x;
-    this._eulerLY = el.y;
-    this._eulerRX = er.x;
-    this._eulerRY = er.y;
+    const nSeg = Math.max(2, this.ropeSegmentCount | 0);
+    const nPts = nSeg + 1;
 
-    this._restLeftZ = el.z;
-    this._restRightZ = er.z;
+    this._anchorLLocal.set(L.position);
+    this._anchorRLocal.set(R.position);
 
-    const leftDepth = this.leftSwingDepthOverride > 0 ? this.leftSwingDepthOverride : this.swingDepthDeg;
-    const rightDepth = this.rightSwingDepthOverride > 0 ? this.rightSwingDepthOverride : this.swingDepthDeg;
+    this._anchorL.set(L.worldPosition);
+    this._anchorR.set(R.worldPosition);
 
-    this._eqLeftZ = this._restLeftZ - Math.abs(leftDepth);
-    this._eqRightZ = this._restRightZ - Math.abs(rightDepth) + this.rightFinalZOffsetDeg;
+    const spL = L.getComponent(Sprite);
+    const spR = R.getComponent(Sprite);
+    const utL = L.getComponent(UITransform);
+    const utR = R.getComponent(UITransform);
+    if (!spL?.spriteFrame || !spR?.spriteFrame || !utL || !utR) {
+      this._ripped = false;
+      this._simulating = false;
+      return;
+    }
 
-    this._leftZ = this._restLeftZ;
-    this._rightZ = this._restRightZ;
-    const imp = Math.abs(this.ripImpulseDegPerSec);
-    const dL = this._eqLeftZ - this._restLeftZ;
-    this._leftVel = dL === 0 ? 0 : Math.sign(dL) * imp;
-    const dR = this._eqRightZ - this._restRightZ;
-    this._rightVel = dR === 0 ? 0 : Math.sign(dR) * imp;
+    const scale = Math.min(1.5, Math.max(0.1, this.ropeLengthScale));
+    const lenL = utL.width * scale;
+    const lenR = utR.width * scale;
+    this._restLenL = lenL / nSeg;
+    this._restLenR = lenR / nSeg;
+    this._segH = Math.max(utL.height, utR.height, 4);
+
+    this._resizePts(this._leftPts, nPts);
+    this._resizePts(this._leftPrev, nPts);
+    this._resizePts(this._rightPts, nPts);
+    this._resizePts(this._rightPrev, nPts);
+
+    this._initChainWorld(this._leftPts, this._anchorL, L.worldMatrix as Mat4, lenL);
+    this._initChainWorld(this._rightPts, this._anchorR, R.worldMatrix as Mat4, lenR);
+
+    const dt0 = 1 / 60;
+    const kickStep = Math.max(0, this.ripKickDown) * dt0;
+    for (let i = 1; i < nPts; i++) {
+      this._leftPrev[i].set(
+        this._leftPts[i].x,
+        this._leftPts[i].y + kickStep,
+        this._leftPts[i].z,
+      );
+      this._rightPrev[i].set(
+        this._rightPts[i].x,
+        this._rightPts[i].y + kickStep,
+        this._rightPts[i].z,
+      );
+    }
+    this._leftPrev[0].set(this._leftPts[0]);
+    this._rightPrev[0].set(this._rightPts[0]);
+
+    this._clearSegmentNodes(false);
+    this._leftSegNodes = this._buildSegments("ropeL_seg_", spL, L.layer, nSeg);
+    this._rightSegNodes = this._buildSegments("ropeR_seg_", spR, R.layer, nSeg);
+
+    L.active = false;
+    R.active = false;
+
+    this._applySegments(this._leftPts, this._leftSegNodes, this._segH);
+    this._applySegments(this._rightPts, this._rightSegNodes, this._segH);
+  }
+
+  private _resizePts(arr: Vec3[], n: number): void {
+    while (arr.length < n) arr.push(new Vec3());
+    arr.length = n;
+  }
+
+  private _initChainWorld(out: Vec3[], anchorW: Vec3, worldMat: Mat4, length: number): void {
+    this._tip.set(length, 0, 0);
+    Vec3.transformMat4(this._tip, this._tip, worldMat);
+    const n = out.length;
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1);
+      Vec3.lerp(out[i], anchorW, this._tip, t);
+    }
+  }
+
+  private _verletIntegrate(
+    pts: Vec3[],
+    prev: Vec3[],
+    anchorW: Vec3,
+    restLen: number,
+    dt: number,
+  ): void {
+    const n = pts.length;
+    const damp = this.ropeAirDamping;
+    const g = this.ropeGravity * dt * dt;
+    const iters = Math.max(1, this.verletIterations | 0);
+
+    for (let i = 1; i < n; i++) {
+      const cur = pts[i]!;
+      const pr = prev[i]!;
+      const vx = (cur.x - pr.x) * damp;
+      const vy = (cur.y - pr.y) * damp;
+      const vz = (cur.z - pr.z) * damp;
+      pr.set(cur);
+      cur.set(cur.x + vx, cur.y + vy + g, cur.z + vz);
+    }
+
+    pts[0]!.set(anchorW);
+
+    for (let k = 0; k < iters; k++) {
+      for (let i = 0; i < n - 1; i++) {
+        this._constrainEdge(pts[i]!, pts[i + 1]!, restLen, i === 0);
+      }
+      pts[0]!.set(anchorW);
+    }
+  }
+
+  private _constrainEdge(a: Vec3, b: Vec3, rest: number, fixA: boolean): void {
+    this._d.set(b.x - a.x, b.y - a.y, b.z - a.z);
+    const len = Math.hypot(this._d.x, this._d.y, this._d.z);
+    if (len < 1e-5) return;
+    if (fixA) {
+      const s = rest / len;
+      b.set(a.x + this._d.x * s, a.y + this._d.y * s, a.z + this._d.z * s);
+      return;
+    }
+    const slip = (len - rest) / len;
+    const hx = this._d.x * slip * 0.5;
+    const hy = this._d.y * slip * 0.5;
+    const hz = this._d.z * slip * 0.5;
+    a.x += hx;
+    a.y += hy;
+    a.z += hz;
+    b.x -= hx;
+    b.y -= hy;
+    b.z -= hz;
+  }
+
+  private _buildSegments(baseName: string, template: Sprite, layer: number, nSeg: number): Node[] {
+    const out: Node[] = [];
+    const parent = this.node;
+    const frame = template.spriteFrame;
+    if (!frame) return out;
+
+    for (let i = 0; i < nSeg; i++) {
+      const n = new Node(`${baseName}${i}`);
+      n.layer = layer;
+      const ui = n.addComponent(UITransform);
+      ui.setAnchorPoint(0.5, 0.5);
+      ui.setContentSize(1, this._segH);
+      const sp = n.addComponent(Sprite);
+      sp.spriteFrame = frame;
+      sp.type = template.type;
+      sp.sizeMode = Sprite.SizeMode.CUSTOM;
+      sp.color = template.color.clone();
+
+      if (template.type === Sprite.Type.FILLED) {
+        sp.fillType = template.fillType;
+        sp.fillCenter = template.fillCenter.clone();
+        sp.fillStart = template.fillStart;
+        sp.fillRange = template.fillRange;
+      }
+
+      parent.addChild(n);
+      out.push(n);
+    }
+    return out;
+  }
+
+  private _applySegments(pts: Vec3[], segNodes: Node[], height: number): void {
+    const n = segNodes.length;
+    const overlap = Math.max(0, this.segmentOverlapPx);
+    for (let i = 0; i < n; i++) {
+      const p0 = pts[i]!;
+      const p1 = pts[i + 1]!;
+      const node = segNodes[i]!;
+      const dx = p1.x - p0.x;
+      const dy = p1.y - p0.y;
+      const len = Math.hypot(dx, dy);
+      const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
+      const mx = (p0.x + p1.x) * 0.5;
+      const my = (p0.y + p1.y) * 0.5;
+      const mz = (p0.z + p1.z) * 0.5;
+      node.setWorldPosition(mx, my, mz);
+      node.setRotationFromEuler(0, 0, ang);
+      const ui = node.getComponent(UITransform)!;
+      ui.setContentSize(Math.max(1, len + overlap), height);
+    }
+  }
+
+  /** @param restoreRopes show original `rope_left` / `rope_right` again after removing runtime segments */
+  private _clearSegmentNodes(restoreRopes: boolean): void {
+    for (const n of this._leftSegNodes) {
+      if (n.isValid) n.destroy();
+    }
+    for (const n of this._rightSegNodes) {
+      if (n.isValid) n.destroy();
+    }
+    this._leftSegNodes.length = 0;
+    this._rightSegNodes.length = 0;
+
+    if (restoreRopes) {
+      const L = this._ropeLeft;
+      const R = this._ropeRight;
+      if (L?.isValid) L.active = true;
+      if (R?.isValid) R.active = true;
+    }
   }
 }

@@ -899,6 +899,7 @@
     "actionText": {
       "__id__": 36
     },
+    "tutorialJumpHintText": "Jump to avoid enemies",
     "gameScrollSpeed": 300,
     "bgContainer": {
       "__id__": 9
@@ -931,6 +932,12 @@
     "congratsAnimateYStep": 60,
     "congratsPhaseDuration": 0.3,
     "congratsPauseDuration": 0.45,
+    "congratsPhrases": [
+      "Fantastic!",
+      "Great!",
+      "Awesome!",
+      "Perfect!"
+    ],
     "_id": "2f4tUfBx5GsrmI8HywvUF3"
   },
   {
